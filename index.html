@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Friday Night MTB Series</title>
+  <meta name="description" content="Accountless schedule and photos for our Friday night MTB race series." />
+  <link rel="preload" href="assets/css/styles.css" as="style">
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <h1 class="brand">6 Pack Downhill 2025</h1>
+      <p class="tag">Dates • Times • Locations • Post‑race photos</p>
+    </div>
+  </header>
+
+  <main class="site-main">
+    <section class="carousel-section">
+      <div id="hot-left" aria-hidden="true"></div>
+      <div id="hot-right" aria-hidden="true"></div>
+      <div class="wrap">
+        <div class="hint">Use ◄ ► keys or tap/drag to browse events</div>
+        <div id="carousel" class="carousel" aria-label="Race events"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <small>© <span id="year"></span> Friday Night MTB • All times Eastern</small>
+    </div>
+  </footer>
+
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+  <script defer src="assets/js/app.js"></script>
+</body>
+</html>
