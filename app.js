@@ -203,3 +203,47 @@ async function main() {
 }
 
 main();
+
+// --- Edge-hover auto-scroll ---
+(function initEdgeHoverScroll() {
+  const hasTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+  if (hasTouch) return; // don't override touch devices
+
+  let vx = 0; // px per frame
+  const EDGE_FRAC = 0.12; // 12% of viewport width on each side
+  const MAX_SPEED = 18;   // px per frame (~60fps)
+
+  function onMove(e) {
+    const w = window.innerWidth;
+    const x = e.clientX;
+    const edge = Math.floor(w * EDGE_FRAC);
+
+    if (x < edge) {
+      const t = (edge - x) / edge; // 0..1
+      vx = -Math.round(t * MAX_SPEED);
+    } else if (x > w - edge) {
+      const t = (x - (w - edge)) / edge; // 0..1
+      vx = Math.round(t * MAX_SPEED);
+    } else {
+      vx = 0;
+    }
+  }
+
+  let rafId = null;
+  function tick() {
+    if (vx !== 0) {
+      CAROUSEL.scrollLeft += vx;
+      rafId = requestAnimationFrame(tick);
+    } else {
+      rafId = null;
+    }
+  }
+
+  function loop() {
+    if (rafId == null && vx !== 0) rafId = requestAnimationFrame(tick);
+  }
+
+  window.addEventListener('mousemove', (e) => { onMove(e); loop(); }, { passive: true });
+  window.addEventListener('mouseleave', () => { vx = 0; }, { passive: true });
+})();
+
