@@ -181,6 +181,29 @@ function centerCardInView(card) {
   CAROUSEL.scrollBy({ left: delta, behavior: 'auto' });
 }
 
+
+function pickBestCard(cards, now = Date.now()) {
+  const live = cards.find(c => c.dataset.state === 'live');
+  if (live) return live;
+  const upcoming = cards.find(c => c.dataset.state === 'upcoming');
+  if (upcoming) return upcoming;
+
+  // Otherwise, choose the nearest future locked; else the nearest past
+  let nearestFuture = null, futureDist = Infinity;
+  let nearestPast = null, pastDist = Infinity;
+  cards.forEach(c => {
+    const s = parseInt(c.dataset.startsAt, 10);
+    if (s >= now) {
+      const d = s - now;
+      if (d < futureDist) { futureDist = d; nearestFuture = c; }
+    } else {
+      const d = now - s;
+      if (d < pastDist) { pastDist = d; nearestPast = c; }
+    }
+  });
+  return nearestFuture || nearestPast || cards[0];
+}
+
 async function main() {
   initNav();
   try {
@@ -192,19 +215,7 @@ async function main() {
     events.forEach(evt => { const c = buildCard(evt); CAROUSEL.appendChild(c); cards.push(c); });
 
     // Choose starting card: live > upcoming > closest by start time
-    const now = Date.now();
-    const live = cards.find(c => c.dataset.state === 'live');
-    const upcoming = cards.find(c => c.dataset.state === 'upcoming');
-    let startCard = live || upcoming;
-    if (!startCard) {
-      let best = null, bestDist = Infinity;
-      cards.forEach(c => {
-        const s = parseInt(c.dataset.startsAt, 10);
-        const d = Math.abs(s - now);
-        if (d < bestDist) { bestDist = d; best = c; }
-      });
-      startCard = best || cards[0];
-    }
+    const startCard = pickBestCard(cards, Date.now());
     requestAnimationFrame(() => centerCardInView(startCard));
 
   } catch (err) {
@@ -219,23 +230,31 @@ async function main() {
 main();
 
 // --- Edge-hover auto-scroll ---
-(function initEdgeHoverScroll() {
-  const hasTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
-  if (hasTouch) return; // don't override touch devices
 
-  let vx = 0; // px per frame
-  const EDGE_FRAC = 0.12; // 12% of viewport width on each side
-  const MAX_SPEED = 18;   // px per frame
+// --- Edge-hover auto-scroll (robust for hybrid devices) ---
+(function initEdgeHoverScroll() {
+  // Enable if any fine pointer (mouse/trackpad) is present
+  const anyFine = matchMedia('(any-pointer: fine)').matches;
+  if (!anyFine) return;
+
+  let vx = 0; // px/frame
+  const EDGE_FRAC = 0.12; // 12% of viewport width
+  const MAX_SPEED = 18;
 
   function onMove(e) {
+    // Only respond to mouse pointers
+    if (e.pointerType && e.pointerType !== 'mouse') { vx = 0; return; }
+
+    const listRect = CAROUSEL.getBoundingClientRect();
+    const inY = e.clientY >= listRect.top && e.clientY <= listRect.bottom;
     const w = window.innerWidth;
     const x = e.clientX;
     const edge = Math.floor(w * EDGE_FRAC);
 
-    if (x < edge) {
+    if (inY && x < edge) {
       const t = (edge - x) / edge;
       vx = -Math.round(t * MAX_SPEED);
-    } else if (x > w - edge) {
+    } else if (inY && x > w - edge) {
       const t = (x - (w - edge)) / edge;
       vx = Math.round(t * MAX_SPEED);
     } else {
@@ -252,11 +271,55 @@ main();
       rafId = null;
     }
   }
+  function loop() { if (rafId == null && vx !== 0) rafId = requestAnimationFrame(tick); }
 
-  function loop() {
-    if (rafId == null && vx !== 0) rafId = requestAnimationFrame(tick);
+  // Use pointer events when available, fallback to mousemove
+  if (window.PointerEvent) {
+    window.addEventListener('pointermove', (e) => { onMove(e); loop(); }, { passive: true });
+    window.addEventListener('pointerleave', () => { vx = 0; }, { passive: true });
+  } else {
+    window.addEventListener('mousemove', (e) => { onMove(e); loop(); }, { passive: true });
+    window.addEventListener('mouseleave', () => { vx = 0; }, { passive: true });
+  }
+})();
+// --- Auto-focus the next relevant block (without hijacking user) ---
+(function initAutoFocusNext() {
+  const cards = () => Array.from(CAROUSEL.querySelectorAll('.card'));
+  let lastUserAction = Date.now();
+  let lastCenteredId = null;
+
+  function markUser() { lastUserAction = Date.now(); }
+  CAROUSEL.addEventListener('scroll', markUser, { passive: true });
+  document.addEventListener('keydown', markUser, { passive: true });
+  document.addEventListener('pointerdown', markUser, { passive: true });
+
+  function currentCenteredCardId() {
+    const rect = CAROUSEL.getBoundingClientRect();
+    const center = CAROUSEL.scrollLeft + rect.width / 2;
+    let best = null, bestDist = Infinity;
+    cards().forEach(c => {
+      const cr = c.getBoundingClientRect();
+      const cc = c.offsetLeft + cr.width / 2;
+      const d = Math.abs(cc - center);
+      if (d < bestDist) { bestDist = d; best = c; }
+    });
+    return best?.dataset.startsAt || null;
   }
 
-  window.addEventListener('mousemove', (e) => { onMove(e); loop(); }, { passive: true });
-  window.addEventListener('mouseleave', () => { vx = 0; }, { passive: true });
+  function tick() {
+    const now = Date.now();
+    // Only refocus if user has been idle for a bit
+    const idleMs = now - lastUserAction;
+    if (idleMs > 15000) { // 15s idle threshold
+      const best = pickBestCard(cards(), now);
+      const bestId = best?.dataset.startsAt || null;
+      const curId = currentCenteredCardId();
+      if (best && bestId && bestId !== curId && bestId !== lastCenteredId) {
+        centerCardInView(best);
+        lastCenteredId = bestId;
+      }
+    }
+  }
+
+  setInterval(tick, 30000); // check every 30s
 })();
