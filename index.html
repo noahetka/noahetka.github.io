@@ -3,15 +3,17 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>6 Pack Downhill</title>
-  <meta name="description" content="Accountless schedule and photos for our Friday night MTB race series." />
-  <link rel="preload" href="assets/css/styles.css" as="style">
-  <link rel="stylesheet" href="assets/css/styles.css" />
+  <title>6 Pack Downhill 2025</title>
+  <meta name="description" content="Accountless schedule and photos for the 6 Pack Downhill 2025 Friday night MTB series." />
+  <link rel="stylesheet" href="assets/css/styles.css?v=5" />
 </head>
 <body>
   <header class="site-header">
     <div class="wrap">
-      <h1 class="brand">6 Pack Downhill 2025</h1>
+      <h1 class="brand">
+        <img src="assets/img/6pack-wordmark.svg" alt="6Pack" style="height:48px; vertical-align:middle;">
+      </h1>
+      <p class="tag">Dates • Times • Locations • Post‑race photos</p>
     </div>
   </header>
 
@@ -26,8 +28,13 @@
     </section>
   </main>
 
+  <footer class="site-footer">
+    <div class="wrap">
+      <small>© <span id="year"></span> 6 Pack Downhill • All times Eastern</small>
+    </div>
+  </footer>
 
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
-  <script defer src="assets/js/app.js"></script>
+  <script defer src="assets/js/app.js?v=5"></script>
 </body>
 </html>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="140" viewBox="0 0 600 140" role="img" aria-labelledby="title desc">
+  <title id="title">6Pack wordmark</title>
+  <desc id="desc">Minimalist black wordmark reading 6Pack</desc>
+  <rect width="100%" height="100%" fill="#FFFFFF"/>
+  <g transform="translate(30,98)">
+    <text x="0" y="0"
+          font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif"
+          font-weight="800"
+          font-size="96"
+          letter-spacing="1"
+          fill="#000000"
+          text-rendering="geometricPrecision">
+      6Pack
+    </text>
+  </g>
+</svg>

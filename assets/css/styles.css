@@ -1,10 +1,10 @@
-/* Black-on-white minimalist theme, centered, with boxed event cards */
+/* Black-on-white minimalist theme, centered, bold boxed event cards */
 * { box-sizing: border-box; }
 :root {
   --bg: #ffffff;
   --ink: #000000;
   --muted: #555555;
-  --line: #151515; /* used for borders */
+  --line: #151515;
   --line-soft: #e9e9e9;
 }
 
@@ -84,14 +84,18 @@ body {
 }
 .progress > span { display: block; height: 100%; width: 0%; background: #000; }
 
-/* Minimalist lock overlay "box" */
+/* Locked overlay appearance */
 .lock-overlay {
   position: absolute; inset: 0;
-  display: grid; place-items: center;
-  background-image: repeating-linear-gradient(135deg, rgba(0,0,0,.06) 0, rgba(0,0,0,.06) 16px, rgba(0,0,0,0) 16px, rgba(0,0,0,0) 32px);
+  display: grid;               /* visible by default; JS will hide when unlocked */
+  place-items: center;
   border: 2px dashed rgba(0,0,0,.35);
-  pointer-events: none;
   border-radius: 12px;
+  background-image: repeating-linear-gradient(
+    135deg, rgba(0,0,0,.06) 0, rgba(0,0,0,.06) 16px,
+    rgba(0,0,0,0) 16px, rgba(0,0,0,0) 32px
+  );
+  pointer-events: none;
 }
 .lock-overlay .lock-label {
   background: rgba(255,255,255,.9);
