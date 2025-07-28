@@ -44,7 +44,7 @@ function unlockRemainingLabel(untilMs) {
   const parts = [];
   if (d) parts.push(`${d} days`);
   parts.push(`${pad(h)} hours`, `${pad(m)} minutes`, `${pad(s)} seconds`);
-  return `Location unlocked in [${parts.join(', ')}]`;
+  return `????????`;
 }
 
 function progressPercent(now, start, end) {
@@ -88,7 +88,6 @@ function buildCard(event) {
     <p class="meta"><span class="label">When</span><br><strong>${fmtDate(new Date(startsAt))}</strong></p>
     <p class="meta"><span class="label">Where</span><br><strong><span data-role="where"></span></strong></p>
     ${event.note ? `<p class="meta"><span class="label">Note</span><br>${event.note}</p>` : ''}
-    <p class="countdown" data-role="countdown"></p>
   `;
   body.appendChild(info);
 
@@ -104,10 +103,12 @@ function buildCard(event) {
   foot.appendChild(prog);
   foot.appendChild(idx);
 
-  // Lock overlay
+  // Lock overlay with countdown
   const lock = document.createElement('div');
   lock.className = 'lock-overlay';
-  lock.innerHTML = `<div class="lock-label">Opens 48h before</div>`;
+  lock.innerHTML = `<div class="lock-label">
+    <span class="lock-countdown"></span>
+  </div>`;
 
   card.appendChild(head);
   card.appendChild(body);
@@ -118,27 +119,27 @@ function buildCard(event) {
   function tick() {
     const now = Date.now();
     const stNow = stateOf(now, startsAt, endsAt);
-    const cd = card.querySelector('[data-role="countdown"]');
     const whereEl = card.querySelector('[data-role="where"]');
     const progressEl = progInner;
+    const lockCountdown = lock.querySelector('.lock-countdown');
 
     if (stNow === 'locked') {
       const untilUnlock = (startsAt - UNLOCK_LEAD_MS) - now;
-      cd.textContent = `Unlocks in ${countdownLabel(untilUnlock)}`;
+      if (lockCountdown) lockCountdown.textContent = `Unlocks in ${countdownLabel(untilUnlock)}`;
       if (whereEl) whereEl.textContent = unlockRemainingLabel(untilUnlock);
       lock.style.display = 'grid';
     } else if (stNow === 'upcoming') {
+      if (lockCountdown) lockCountdown.textContent = '';
       const untilStart = startsAt - now;
-      cd.textContent = `Starts in ${countdownLabel(untilStart)}`;
       if (whereEl) whereEl.textContent = (event.location && event.location.trim()) ? event.location : 'TBA';
       lock.style.display = 'none';
     } else if (stNow === 'live') {
+      if (lockCountdown) lockCountdown.textContent = '';
       const untilEnd = endsAt - now;
-      cd.textContent = `LIVE • ${countdownLabel(untilEnd)} left`;
       if (whereEl) whereEl.textContent = (event.location && event.location.trim()) ? event.location : 'TBA';
       lock.style.display = 'none';
     } else {
-      cd.textContent = `Event finished`;
+      if (lockCountdown) lockCountdown.textContent = '';
       if (whereEl) whereEl.textContent = (event.location && event.location.trim()) ? event.location : 'TBA';
       lock.style.display = 'none';
     }
@@ -229,59 +230,6 @@ async function main() {
 
 main();
 
-// --- Edge-hover auto-scroll ---
-
-// --- Edge-hover auto-scroll (robust for hybrid devices) ---
-(function initEdgeHoverScroll() {
-  // Enable if any fine pointer (mouse/trackpad) is present
-  const anyFine = matchMedia('(any-pointer: fine)').matches;
-  if (!anyFine) return;
-
-  let vx = 0; // px/frame
-  const EDGE_FRAC = 0.12; // 12% of viewport width
-  const MAX_SPEED = 18;
-
-  function onMove(e) {
-    // Only respond to mouse pointers
-    if (e.pointerType && e.pointerType !== 'mouse') { vx = 0; return; }
-
-    const listRect = CAROUSEL.getBoundingClientRect();
-    const inY = e.clientY >= listRect.top && e.clientY <= listRect.bottom;
-    const w = window.innerWidth;
-    const x = e.clientX;
-    const edge = Math.floor(w * EDGE_FRAC);
-
-    if (inY && x < edge) {
-      const t = (edge - x) / edge;
-      vx = -Math.round(t * MAX_SPEED);
-    } else if (inY && x > w - edge) {
-      const t = (x - (w - edge)) / edge;
-      vx = Math.round(t * MAX_SPEED);
-    } else {
-      vx = 0;
-    }
-  }
-
-  let rafId = null;
-  function tick() {
-    if (vx !== 0) {
-      CAROUSEL.scrollLeft += vx;
-      rafId = requestAnimationFrame(tick);
-    } else {
-      rafId = null;
-    }
-  }
-  function loop() { if (rafId == null && vx !== 0) rafId = requestAnimationFrame(tick); }
-
-  // Use pointer events when available, fallback to mousemove
-  if (window.PointerEvent) {
-    window.addEventListener('pointermove', (e) => { onMove(e); loop(); }, { passive: true });
-    window.addEventListener('pointerleave', () => { vx = 0; }, { passive: true });
-  } else {
-    window.addEventListener('mousemove', (e) => { onMove(e); loop(); }, { passive: true });
-    window.addEventListener('mouseleave', () => { vx = 0; }, { passive: true });
-  }
-})();
 // --- Auto-focus the next relevant block (without hijacking user) ---
 (function initAutoFocusNext() {
   const cards = () => Array.from(CAROUSEL.querySelectorAll('.card'));
